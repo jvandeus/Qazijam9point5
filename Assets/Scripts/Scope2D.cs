@@ -4,7 +4,7 @@ using System.Collections;
 // [RequireComponent(typeof(Camera))]
 public class Scope2D : MonoBehaviour 
 {
-	private Camera scopeCamera;
+	public Camera scopeCamera;
 	private GameObject magnifyBorders;
 	private LineRenderer LeftBorder, RightBorder, TopBorder, BottomBorder; // Reference for lines of magnify glass borders
 	private float ScopeOriginX,ScopeOriginY; // Scope Origin X and Y position
@@ -19,9 +19,10 @@ public class Scope2D : MonoBehaviour
 	void Update () 
 	{
 		// Following lines set the camera's pixelRect and camera position at mouse position
-		scopeCamera.pixelRect = new Rect (Input.mousePosition.x - ScopeWidth / 2.0f, Input.mousePosition.y - ScopeHeight / 2.0f, ScopeWidth, ScopeHeight);
+		// scopeCamera.pixelRect = new Rect (Input.mousePosition.x - ScopeWidth / 2.0f, Input.mousePosition.y - ScopeHeight / 2.0f, ScopeWidth, ScopeHeight);
 		mousePos = getWorldPosition (Input.mousePosition);
-		scopeCamera.transform.position = mousePos;
+		mousePos.z = 0;
+		transform.position = mousePos;
 		mousePos.z = 0;
 		magnifyBorders.transform.position = mousePos;
 	}
@@ -31,19 +32,19 @@ public class Scope2D : MonoBehaviour
 	{
 		ScopeOriginX = Screen.width / 2f - ScopeWidth/2f; 
 		ScopeOriginY = Screen.height / 2f - ScopeHeight/2f; 
-		scopeCamera = GetComponent<Camera>();
-		scopeCamera.pixelRect = new Rect(ScopeOriginX, ScopeOriginY, ScopeWidth, ScopeHeight);
-		scopeCamera.transform.position = new Vector3(0,0,0);
+		// scopeCamera = GetComponent<Camera>();
+		// scopeCamera.pixelRect = new Rect(ScopeOriginX, ScopeOriginY, ScopeWidth, ScopeHeight);
+		transform.position = new Vector3(0,0,0);
 		if(Camera.main.orthographic)
 		{
 			scopeCamera.orthographic = true;
-			scopeCamera.orthographicSize = Camera.main.orthographicSize / 5.0f;//+ 1.0f;
-			createBordersForScope ();
+			// scopeCamera.orthographicSize = Camera.main.orthographicSize / 5.0f;//+ 1.0f;
+			createBordersForScope();
 		}
 		else
 		{
 			scopeCamera.orthographic = false;
-			scopeCamera.fieldOfView = Camera.main.fieldOfView / 10.0f;//3.0f;
+			// scopeCamera.fieldOfView = Camera.main.fieldOfView / 10.0f;//3.0f;
 		}
 
 	}
