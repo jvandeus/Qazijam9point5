@@ -25,4 +25,17 @@ public class UIScope2D : MonoBehaviour
 	{
 		Cursor.SetCursor(cursorTexture, hotSpot, cursorMode);
 	}
+
+	/**
+	 * Fire the gun into the scene, or click make a click if no bullets.
+	 */
+	public void FireGun()
+	{
+		// pseudo code:
+		// Is there any bullets left?
+		// if not, click, and do not fire. return.
+		// otherwise play a fire sound effect
+		// raycast from either mouse position or the center position of this object into the scene to see if anything is hit.
+		// run the function in the hitable object to react to the hit.
+	}
 }
