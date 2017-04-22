@@ -39,17 +39,29 @@ public class UIScope2D : MonoBehaviour
     //Score
     public int score;
     public int multi;
+    int topCombo;
+    int thisCombo;
     public int normalHitValue;
     public int critHitValue;
     public UnityEngine.UI.Text multiTextDisplay;
+
+    //Health
+    int hitsTaken = 0;
+    public GameObject stageBG;
+    Renderer BGRender;
+    bool displayDamage = false;
+    float timeLerpStarted = 0.0f;
 
     void Start()
     {
         Cursor.SetCursor(cursorTexture, hotSpot, cursorMode);
         shotPointer = 0;
         objectAudio = GetComponent<AudioSource>();
+        BGRender = stageBG.GetComponent<Renderer>();
         score = 0;
         multi = 0;
+        topCombo = 0;
+        thisCombo = 0;
         multiTextDisplay.text = "";
 
         foreach (Transform thisChild in BulletUI.transform)
@@ -84,6 +96,21 @@ public class UIScope2D : MonoBehaviour
         {
             nextSpawn = Time.time + enemySpawnDelay;
             SpawnNewEnemy();
+        }
+
+        if (displayDamage)
+        {
+            float timeSinceStarted = Time.time - timeLerpStarted;
+            float percentageComplete = timeSinceStarted / 1f;
+            if (percentageComplete >= 1.0f)
+            {
+                displayDamage = false;
+                BGRender.material.color = Color.white;
+            }
+            else
+            {
+                BGRender.material.color = Color.Lerp(Color.red, Color.white, percentageComplete);
+            }
         }
 
         //Shooting
@@ -135,6 +162,11 @@ public class UIScope2D : MonoBehaviour
                 {
                     multi++;
                 }
+                thisCombo++;
+                if (thisCombo > topCombo)
+                {
+                    topCombo = thisCombo;
+                }
                 score = score + (critHitValue * multi);
             }
             else if (Physics.Raycast(scopeCamera.transform.position, Vector3.forward, out eHit, 25f, enemyMask, QueryTriggerInteraction.Ignore))
@@ -161,7 +193,7 @@ public class UIScope2D : MonoBehaviour
 
     public void HandleReload()
     {
-        if (shotPointer != 0 && Time.time > nextFire + 0.05f)
+        if (shotPointer != 0 && Time.time > nextFire + 0.25f)
         {
             /*foreach (GameObject thisBullet in BulletUIChildren)
             {
@@ -211,11 +243,19 @@ public class UIScope2D : MonoBehaviour
             eRenderer.enabled = true;
             eScript = randomSpawn.GetComponent<EnemyHandler>();
             eScript.hitpoints = eScript.hitpointDefault;
+            eScript.setTimeToNextShot();
         }
         else
         {
             nextSpawn = Time.time + enemySpawnDelay;
         }
 
+    }
+
+    public void TakeDamage()
+    {
+        BGRender.material.color = Color.red;
+        timeLerpStarted = Time.time;
+        displayDamage = true;
     }
 }

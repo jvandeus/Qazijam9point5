@@ -8,23 +8,64 @@ public class EnemyHandler : MonoBehaviour
     public int hitpoints;
     public int hitpointDefault;
     public float shotDelay;
+    float nextShot;
     public float shotWarn;
+    float nextWarn;
     float deathDelay;
     public float nextSpawn;
     Renderer thisRenderer;
+    public GameObject weakPointObject;
+    public GameObject warnIcon;
+    Renderer warnIconRenderer;
+    public GameObject playerObject;
+    UIScope2D playerScript;
 
     // Use this for initialization
     void Start()
     {
         thisRenderer = gameObject.GetComponent<Renderer>();
-        thisRenderer.enabled = false;
+        warnIconRenderer = warnIcon.GetComponent<Renderer>();
+        playerScript = playerObject.GetComponent<UIScope2D>();
         deathDelay = 5f;
     }
 
     // Update is called once per frame
     void Update()
     {
+        if (thisRenderer.enabled)
+        {
+            gameObject.layer = 8;
+            weakPointObject.layer = 9;
+            if (Time.time > nextWarn)
+            {
+                if (!warnIconRenderer.enabled)
+                {
+                    warnIconRenderer.enabled = true;
+                }
+                warnIcon.transform.Rotate(Vector3.forward * (Time.deltaTime * 20));
+            }
 
+            if (Time.time > nextShot)
+            {
+                //shoot
+                warnIconRenderer.enabled = false;
+                nextShot = Time.time + shotDelay;
+                nextWarn = nextShot - shotWarn;
+                playerScript.TakeDamage();
+            }
+        }
+        else
+        {
+            weakPointObject.layer = 10;
+            gameObject.layer = 10;
+        }
+
+    }
+
+    public void setTimeToNextShot()
+    {
+        nextShot = Time.time + shotDelay;
+        nextWarn = nextShot - shotWarn;
     }
 
     public void weakPointHit()
@@ -35,6 +76,7 @@ public class EnemyHandler : MonoBehaviour
             if (hitpoints <= 0)
             {
                 thisRenderer.enabled = false;
+                warnIconRenderer.enabled = false;
                 nextSpawn = Time.time + deathDelay;
             }
         }
@@ -48,6 +90,7 @@ public class EnemyHandler : MonoBehaviour
             if (hitpoints <= 0)
             {
                 thisRenderer.enabled = false;
+                warnIconRenderer.enabled = false;
                 nextSpawn = Time.time + deathDelay;
             }
         }
