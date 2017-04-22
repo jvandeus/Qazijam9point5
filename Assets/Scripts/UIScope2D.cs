@@ -29,6 +29,12 @@ public class UIScope2D : MonoBehaviour
     public AudioClip reloadDone;
     //Enemy Hit Detection
     public LayerMask enemyMask;
+    public LayerMask weakPointMask;
+
+    //Enemy Spawn Handling
+    public GameObject enemySpawnParent;
+    public float enemySpawnDelay;
+    float nextSpawn = 0.0f;
 
     void Update()
     {
@@ -37,6 +43,12 @@ public class UIScope2D : MonoBehaviour
         scopeOutline.transform.position = mousePos;
         mousePos.z = -1.0f;
         scopeCamera.transform.position = Camera.main.ScreenToWorldPoint(mousePos);
+
+        if (Time.time > nextSpawn)
+        {
+            nextSpawn = Time.time + enemySpawnDelay;
+            SpawnNewEnemy();
+        }
 
         //Shooting
         if (Input.GetMouseButtonDown(0))
@@ -49,7 +61,7 @@ public class UIScope2D : MonoBehaviour
         {
             HandleReload();
         }
-       
+
     }
 
     void Start()
@@ -89,9 +101,17 @@ public class UIScope2D : MonoBehaviour
             shotPointer++;
 
             RaycastHit eHit;
-            if (Physics.Raycast(scopeCamera.transform.position, Vector3.forward, out eHit, 25f, enemyMask, QueryTriggerInteraction.Ignore))
+            //Check for weak point hit, then check for normal hit
+            if (Physics.Raycast(scopeCamera.transform.position, Vector3.forward, out eHit, 25f, weakPointMask, QueryTriggerInteraction.Ignore))
             {
-                Destroy(eHit.transform.gameObject);
+                //weakpoint hitbox is a child of enemy, get parent first
+                EnemyHandler eScript = eHit.transform.parent.transform.GetComponent<EnemyHandler>();
+                eScript.weakPointHit();
+            }
+            else if (Physics.Raycast(scopeCamera.transform.position, Vector3.forward, out eHit, 25f, enemyMask, QueryTriggerInteraction.Ignore))
+            {
+                EnemyHandler eScript = eHit.transform.GetComponent<EnemyHandler>();
+                eScript.normalHit();
             }
         }
         else if (shotPointer == 6 && Time.time > nextFire)
@@ -131,5 +151,36 @@ public class UIScope2D : MonoBehaviour
                 objectAudio.PlayOneShot(reloadBullet, 0.75f);
             }
         }
+    }
+
+    public void SpawnNewEnemy()
+    {
+        //Get all unenabled spawns from enemy parent, pick one at random to enable
+        List<GameObject> validSpawns = new List<GameObject>();
+        Renderer eRenderer;
+        EnemyHandler eScript;
+        foreach (Transform thisEnemy in enemySpawnParent.transform)
+        {
+            eRenderer = thisEnemy.gameObject.GetComponent<Renderer>();
+            eScript = thisEnemy.gameObject.GetComponent<EnemyHandler>();
+            if (!eRenderer.enabled && Time.time > eScript.nextSpawn)
+            {
+                validSpawns.Add(thisEnemy.gameObject);
+            }
+        }
+
+        if (validSpawns.Count > 0)
+        {
+            GameObject randomSpawn = validSpawns[Random.Range(0, validSpawns.Count)];
+            eRenderer = randomSpawn.GetComponent<Renderer>();
+            eRenderer.enabled = true;
+            eScript = randomSpawn.GetComponent<EnemyHandler>();
+            eScript.hitpoints = eScript.hitpointDefault;
+        }
+        else
+        {
+            nextSpawn = Time.time + enemySpawnDelay;
+        }
+
     }
 }
