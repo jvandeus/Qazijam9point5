@@ -12,6 +12,8 @@ public class UIScope2D : MonoBehaviour
     public CursorMode cursorMode = CursorMode.Auto;
     public Vector2 hotSpot = Vector2.zero;
 
+    bool gamePaused;
+
     //Firing
     int shotPointer;
     AudioSource objectAudio;
@@ -44,6 +46,8 @@ public class UIScope2D : MonoBehaviour
     public int normalHitValue;
     public int critHitValue;
     public UnityEngine.UI.Text multiTextDisplay;
+    public UnityEngine.UI.Text scoreTextDisplay;
+    public GameObject gameOverCanvas;
 
     //Health
     int hitsTaken = 0;
@@ -54,6 +58,7 @@ public class UIScope2D : MonoBehaviour
 
     void Start()
     {
+        gamePaused = false;
         Cursor.SetCursor(cursorTexture, hotSpot, cursorMode);
         shotPointer = 0;
         objectAudio = GetComponent<AudioSource>();
@@ -68,63 +73,67 @@ public class UIScope2D : MonoBehaviour
         {
             BulletUIChildren.Add(thisChild.gameObject);
         }
+
+        gameOverCanvas.SetActive(false);
     }
 
     void Update()
     {
-        Vector3 mousePos = Input.mousePosition;
-        scopePanel.transform.position = mousePos;
-        scopeOutline.transform.position = mousePos;
-        mousePos.z = -1.0f;
-        scopeCamera.transform.position = Camera.main.ScreenToWorldPoint(mousePos);
-        if (multi < 1)
+        if (!gamePaused)
         {
-            multiTextDisplay.text = "";
-        }
-        else if (multi > 1 && multi < 5)
-        {
-            multiTextDisplay.text = multi.ToString() + "X";
-        }
-        else if (multi == 5)
-        {
-            multiTextDisplay.text = "MAX";
-        }
-
-        multiTextDisplay.color = new Color(multi * 0.2f, 0, 0);
-
-        if (Time.time > nextSpawn)
-        {
-            nextSpawn = Time.time + enemySpawnDelay;
-            SpawnNewEnemy();
-        }
-
-        if (displayDamage)
-        {
-            float timeSinceStarted = Time.time - timeLerpStarted;
-            float percentageComplete = timeSinceStarted / 1f;
-            if (percentageComplete >= 1.0f)
+            Vector3 mousePos = Input.mousePosition;
+            scopePanel.transform.position = mousePos;
+            scopeOutline.transform.position = mousePos;
+            mousePos.z = -1.0f;
+            scopeCamera.transform.position = Camera.main.ScreenToWorldPoint(mousePos);
+            if (multi < 1)
             {
-                displayDamage = false;
-                BGRender.material.color = Color.white;
+                multiTextDisplay.text = "";
             }
-            else
+            else if (multi > 1 && multi < 5)
             {
-                BGRender.material.color = Color.Lerp(Color.red, Color.white, percentageComplete);
+                multiTextDisplay.text = multi.ToString() + "X";
+            }
+            else if (multi == 5)
+            {
+                multiTextDisplay.text = "MAX";
+            }
+
+            multiTextDisplay.color = new Color(multi * 0.2f, 0, 0);
+
+            if (Time.time > nextSpawn)
+            {
+                nextSpawn = Time.time + enemySpawnDelay;
+                SpawnNewEnemy();
+            }
+
+            if (displayDamage)
+            {
+                float timeSinceStarted = Time.time - timeLerpStarted;
+                float percentageComplete = timeSinceStarted / 1f;
+                if (percentageComplete >= 1.0f)
+                {
+                    displayDamage = false;
+                    BGRender.material.color = Color.white;
+                }
+                else
+                {
+                    BGRender.material.color = Color.Lerp(Color.red, Color.white, percentageComplete); ;
+                }
+            }
+
+            //Shooting
+            if (Input.GetMouseButtonDown(0))
+            {
+                FireGun();
+            }
+
+            //Reloading
+            if ((Input.GetKeyDown(KeyCode.R) && !isReloading) || (isReloading && Time.time > nextReload))
+            {
+                HandleReload();
             }
         }
-
-        //Shooting
-        if (Input.GetMouseButtonDown(0))
-        {
-            FireGun();
-        }
-
-        //Reloading
-        if ((Input.GetKeyDown(KeyCode.R) && !isReloading) || (isReloading && Time.time > nextReload))
-        {
-            HandleReload();
-        }
-
     }
 
     /**
@@ -230,7 +239,7 @@ public class UIScope2D : MonoBehaviour
         {
             eRenderer = thisEnemy.gameObject.GetComponent<Renderer>();
             eScript = thisEnemy.gameObject.GetComponent<EnemyHandler>();
-            if (!eRenderer.enabled && Time.time > eScript.nextSpawn)
+            if (eScript.isDead && Time.time > eScript.nextSpawn)
             {
                 validSpawns.Add(thisEnemy.gameObject);
             }
@@ -239,11 +248,13 @@ public class UIScope2D : MonoBehaviour
         if (validSpawns.Count > 0)
         {
             GameObject randomSpawn = validSpawns[Random.Range(0, validSpawns.Count)];
-            eRenderer = randomSpawn.GetComponent<Renderer>();
-            eRenderer.enabled = true;
             eScript = randomSpawn.GetComponent<EnemyHandler>();
+            eScript.isDead = false;
+            eScript.animator.SetBool("isDying", false);
+            eScript.animator.SetBool("isRising", true);
             eScript.hitpoints = eScript.hitpointDefault;
             eScript.setTimeToNextShot();
+            Debug.Log(Time.time);
         }
         else
         {
@@ -254,8 +265,30 @@ public class UIScope2D : MonoBehaviour
 
     public void TakeDamage()
     {
-        BGRender.material.color = Color.red;
         timeLerpStarted = Time.time;
         displayDamage = true;
+        hitsTaken++;
+        if (hitsTaken >= 3)
+        {
+            GameOver();
+        }
+        else
+        {
+            BGRender.material.color = Color.red;
+        }
+
+    }
+
+    public void GameOver()
+    {
+        gamePaused = true;
+        scoreTextDisplay.text = "Score : " + score.ToString() + "\n Best Combo : " + topCombo.ToString();
+        EnemyHandler eScript;
+        foreach (Transform thisEnemy in enemySpawnParent.transform)
+        {
+            eScript = thisEnemy.gameObject.GetComponent<EnemyHandler>();
+            eScript.togglePause();
+        }
+        gameOverCanvas.SetActive(true);
     }
 }

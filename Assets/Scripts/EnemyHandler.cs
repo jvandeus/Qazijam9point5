@@ -19,20 +19,26 @@ public class EnemyHandler : MonoBehaviour
     Renderer warnIconRenderer;
     public GameObject playerObject;
     UIScope2D playerScript;
+    bool isPaused;
+    public bool isDead;
 
+    public Animator animator;
     // Use this for initialization
     void Start()
     {
+        isPaused = false;
+        isDead = true;
         thisRenderer = gameObject.GetComponent<Renderer>();
         warnIconRenderer = warnIcon.GetComponent<Renderer>();
         playerScript = playerObject.GetComponent<UIScope2D>();
         deathDelay = 5f;
+        animator = GetComponent<Animator>();
     }
 
     // Update is called once per frame
     void Update()
     {
-        if (thisRenderer.enabled)
+        if (!isDead && !isPaused)
         {
             gameObject.layer = 8;
             weakPointObject.layer = 9;
@@ -75,7 +81,9 @@ public class EnemyHandler : MonoBehaviour
             hitpoints = hitpoints - 2;
             if (hitpoints <= 0)
             {
-                thisRenderer.enabled = false;
+                animator.SetBool("isDying", true);
+                //thisRenderer.enabled = false;
+                isDead = true;
                 warnIconRenderer.enabled = false;
                 nextSpawn = Time.time + deathDelay;
             }
@@ -89,10 +97,17 @@ public class EnemyHandler : MonoBehaviour
             hitpoints--;
             if (hitpoints <= 0)
             {
-                thisRenderer.enabled = false;
+                animator.SetBool("isDying", true);
+                //thisRenderer.enabled = false;
+                isDead = true;
                 warnIconRenderer.enabled = false;
                 nextSpawn = Time.time + deathDelay;
             }
         }
+    }
+
+    public void togglePause()
+    {
+        isPaused = !isPaused;
     }
 }
