@@ -36,6 +36,28 @@ public class UIScope2D : MonoBehaviour
     public float enemySpawnDelay;
     float nextSpawn = 0.0f;
 
+    //Score
+    public int score;
+    public int multi;
+    public int normalHitValue;
+    public int critHitValue;
+    public UnityEngine.UI.Text multiTextDisplay;
+
+    void Start()
+    {
+        Cursor.SetCursor(cursorTexture, hotSpot, cursorMode);
+        shotPointer = 0;
+        objectAudio = GetComponent<AudioSource>();
+        score = 0;
+        multi = 0;
+        multiTextDisplay.text = "";
+
+        foreach (Transform thisChild in BulletUI.transform)
+        {
+            BulletUIChildren.Add(thisChild.gameObject);
+        }
+    }
+
     void Update()
     {
         Vector3 mousePos = Input.mousePosition;
@@ -43,6 +65,20 @@ public class UIScope2D : MonoBehaviour
         scopeOutline.transform.position = mousePos;
         mousePos.z = -1.0f;
         scopeCamera.transform.position = Camera.main.ScreenToWorldPoint(mousePos);
+        if (multi < 1)
+        {
+            multiTextDisplay.text = "";
+        }
+        else if (multi > 1 && multi < 5)
+        {
+            multiTextDisplay.text = multi.ToString() + "X";
+        }
+        else if (multi == 5)
+        {
+            multiTextDisplay.text = "MAX";
+        }
+
+        multiTextDisplay.color = new Color(multi * 0.2f, 0, 0);
 
         if (Time.time > nextSpawn)
         {
@@ -62,18 +98,6 @@ public class UIScope2D : MonoBehaviour
             HandleReload();
         }
 
-    }
-
-    void Start()
-    {
-        Cursor.SetCursor(cursorTexture, hotSpot, cursorMode);
-        shotPointer = 0;
-        objectAudio = GetComponent<AudioSource>();
-
-        foreach (Transform thisChild in BulletUI.transform)
-        {
-            BulletUIChildren.Add(thisChild.gameObject);
-        }
     }
 
     /**
@@ -107,11 +131,22 @@ public class UIScope2D : MonoBehaviour
                 //weakpoint hitbox is a child of enemy, get parent first
                 EnemyHandler eScript = eHit.transform.parent.transform.GetComponent<EnemyHandler>();
                 eScript.weakPointHit();
+                if (multi < 5)
+                {
+                    multi++;
+                }
+                score = score + (critHitValue * multi);
             }
             else if (Physics.Raycast(scopeCamera.transform.position, Vector3.forward, out eHit, 25f, enemyMask, QueryTriggerInteraction.Ignore))
             {
                 EnemyHandler eScript = eHit.transform.GetComponent<EnemyHandler>();
                 eScript.normalHit();
+                multi = 0;
+                score = score + normalHitValue;
+            }
+            else
+            {
+                multi = 0;
             }
         }
         else if (shotPointer == 6 && Time.time > nextFire)
