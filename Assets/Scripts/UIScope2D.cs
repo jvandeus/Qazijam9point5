@@ -29,6 +29,34 @@ public class UIScope2D : MonoBehaviour
     public AudioClip reloadDone;
     //Enemy Hit Detection
     public LayerMask enemyMask;
+    public LayerMask weakPointMask;
+
+    //Enemy Spawn Handling
+    public GameObject enemySpawnParent;
+    public float enemySpawnDelay;
+    float nextSpawn = 0.0f;
+
+    //Score
+    public int score;
+    public int multi;
+    public int normalHitValue;
+    public int critHitValue;
+    public UnityEngine.UI.Text multiTextDisplay;
+
+    void Start()
+    {
+        Cursor.SetCursor(cursorTexture, hotSpot, cursorMode);
+        shotPointer = 0;
+        objectAudio = GetComponent<AudioSource>();
+        score = 0;
+        multi = 0;
+        multiTextDisplay.text = "";
+
+        foreach (Transform thisChild in BulletUI.transform)
+        {
+            BulletUIChildren.Add(thisChild.gameObject);
+        }
+    }
 
     void Update()
     {
@@ -37,6 +65,26 @@ public class UIScope2D : MonoBehaviour
         scopeOutline.transform.position = mousePos;
         mousePos.z = -1.0f;
         scopeCamera.transform.position = Camera.main.ScreenToWorldPoint(mousePos);
+        if (multi < 1)
+        {
+            multiTextDisplay.text = "";
+        }
+        else if (multi > 1 && multi < 5)
+        {
+            multiTextDisplay.text = multi.ToString() + "X";
+        }
+        else if (multi == 5)
+        {
+            multiTextDisplay.text = "MAX";
+        }
+
+        multiTextDisplay.color = new Color(multi * 0.2f, 0, 0);
+
+        if (Time.time > nextSpawn)
+        {
+            nextSpawn = Time.time + enemySpawnDelay;
+            SpawnNewEnemy();
+        }
 
         //Shooting
         if (Input.GetMouseButtonDown(0))
@@ -49,19 +97,7 @@ public class UIScope2D : MonoBehaviour
         {
             HandleReload();
         }
-       
-    }
 
-    void Start()
-    {
-        Cursor.SetCursor(cursorTexture, hotSpot, cursorMode);
-        shotPointer = 0;
-        objectAudio = GetComponent<AudioSource>();
-
-        foreach (Transform thisChild in BulletUI.transform)
-        {
-            BulletUIChildren.Add(thisChild.gameObject);
-        }
     }
 
     /**
@@ -89,9 +125,28 @@ public class UIScope2D : MonoBehaviour
             shotPointer++;
 
             RaycastHit eHit;
-            if (Physics.Raycast(scopeCamera.transform.position, Vector3.forward, out eHit, 25f, enemyMask, QueryTriggerInteraction.Ignore))
+            //Check for weak point hit, then check for normal hit
+            if (Physics.Raycast(scopeCamera.transform.position, Vector3.forward, out eHit, 25f, weakPointMask, QueryTriggerInteraction.Ignore))
             {
-                Destroy(eHit.transform.gameObject);
+                //weakpoint hitbox is a child of enemy, get parent first
+                EnemyHandler eScript = eHit.transform.parent.transform.GetComponent<EnemyHandler>();
+                eScript.weakPointHit();
+                if (multi < 5)
+                {
+                    multi++;
+                }
+                score = score + (critHitValue * multi);
+            }
+            else if (Physics.Raycast(scopeCamera.transform.position, Vector3.forward, out eHit, 25f, enemyMask, QueryTriggerInteraction.Ignore))
+            {
+                EnemyHandler eScript = eHit.transform.GetComponent<EnemyHandler>();
+                eScript.normalHit();
+                multi = 0;
+                score = score + normalHitValue;
+            }
+            else
+            {
+                multi = 0;
             }
         }
         else if (shotPointer == 6 && Time.time > nextFire)
@@ -131,5 +186,36 @@ public class UIScope2D : MonoBehaviour
                 objectAudio.PlayOneShot(reloadBullet, 0.75f);
             }
         }
+    }
+
+    public void SpawnNewEnemy()
+    {
+        //Get all unenabled spawns from enemy parent, pick one at random to enable
+        List<GameObject> validSpawns = new List<GameObject>();
+        Renderer eRenderer;
+        EnemyHandler eScript;
+        foreach (Transform thisEnemy in enemySpawnParent.transform)
+        {
+            eRenderer = thisEnemy.gameObject.GetComponent<Renderer>();
+            eScript = thisEnemy.gameObject.GetComponent<EnemyHandler>();
+            if (!eRenderer.enabled && Time.time > eScript.nextSpawn)
+            {
+                validSpawns.Add(thisEnemy.gameObject);
+            }
+        }
+
+        if (validSpawns.Count > 0)
+        {
+            GameObject randomSpawn = validSpawns[Random.Range(0, validSpawns.Count)];
+            eRenderer = randomSpawn.GetComponent<Renderer>();
+            eRenderer.enabled = true;
+            eScript = randomSpawn.GetComponent<EnemyHandler>();
+            eScript.hitpoints = eScript.hitpointDefault;
+        }
+        else
+        {
+            nextSpawn = Time.time + enemySpawnDelay;
+        }
+
     }
 }
