@@ -56,6 +56,7 @@ public class UIScope2D : MonoBehaviour
     public int normalHitValue;
     public int critHitValue;
     public UnityEngine.UI.Text multiTextDisplay;
+    public UnityEngine.UI.Text inGameScoreTextDisplay;
     public UnityEngine.UI.Text scoreTextDisplay;
     public GameObject gameOverCanvas;
 
@@ -143,29 +144,41 @@ public class UIScope2D : MonoBehaviour
 
             multiTextDisplay.color = new Color(multi * 0.2f, 0, 0);
 
+            inGameScoreTextDisplay.text = score.ToString();
+
             if (Time.time > nextSpawn)
             {
-                nextSpawn = Time.time + enemySpawnDelay;
-                SpawnNewEnemy();
+                
+                SpawnNewEnemy(false);
                 spawnCounter++;
-                if (difficultyLevel >= 15)
+                if (difficultyLevel >= 20)
                 {
-                    SpawnNewEnemy();
+                    SpawnNewEnemy(true);
+                }
+                else if (difficultyLevel >= 15)
+                {
+                    enemySpawnDelay = 2f;
+                    if (Random.Range(0, 100) > 24)
+                    {                
+                        SpawnNewEnemy(true);
+                    }
                 }
                 else if (difficultyLevel >= 10)
                 {
-                    if (Random.Range(0, 100) > 74)
+                    if (Random.Range(0, 100) > 49)
                     {
-                        SpawnNewEnemy();
+                        SpawnNewEnemy(true);
                     }
                 }
                 else if (difficultyLevel >= 5)
                 {
-                    if (Random.Range(0, 100) > 49)
-                    {
-                        SpawnNewEnemy();
+                    enemySpawnDelay = 3f;
+                    if (Random.Range(0, 100) > 74)
+                    {                     
+                        SpawnNewEnemy(true);
                     }
                 }
+                nextSpawn = Time.time + enemySpawnDelay;
             }
 
             if (isCharged && Time.time > chargeExpire)
@@ -183,17 +196,30 @@ public class UIScope2D : MonoBehaviour
             if (spawnCounter >= enemySpawnsToPowerUp)
             {
                 spawnCounter = 0;
+                int thisRoll = Random.Range(0, 100);
                 if (hitsTaken >= 2)
                 {
                     spawnPowerUp("HealthPack");
                 }
-                else if (hitsTaken > 0 && Random.Range(0, 100) > 49)
+                else if (hitsTaken > 0 && thisRoll > 69)
                 {
                     spawnPowerUp("HealthPack");
                 }
-                else
+                else if (hitsTaken > 0 && thisRoll <= 39)
                 {
                     spawnPowerUp("Supercharger");
+                }
+                else if (hitsTaken > 0 && thisRoll <= 69)
+                {
+                    spawnPowerUp("ScreenClear");
+                }
+                else if (thisRoll >= 49)
+                {
+                    spawnPowerUp("Supercharger");
+                }
+                else
+                {
+                    spawnPowerUp("ScreenClear");
                 }
             }
 
@@ -321,6 +347,24 @@ public class UIScope2D : MonoBehaviour
                             bRend.material.color = Color.red;
                         }
                     }
+                    else if (eHit.transform.tag == "ScreenClear")
+                    {
+                        AudioSource packAudio = eHit.transform.GetComponent<AudioSource>();
+                        packAudio.PlayOneShot(packAudio.clip);
+                        Renderer packRend = eHit.transform.GetComponent<Renderer>();
+                        packRend.enabled = false;
+                        eHit.transform.gameObject.layer = 10;
+                        EnemyHandler eScript;
+                        foreach (Transform thisEnemy in enemySpawnParent.transform)
+                        {
+                            eScript = thisEnemy.gameObject.GetComponent<EnemyHandler>();
+                            if (!eScript.isDead)
+                            {
+                                eScript.weakPointHit();
+                                score = score + critHitValue;
+                            }
+                        }
+                    }
                 }
                 else
                 {
@@ -380,7 +424,7 @@ public class UIScope2D : MonoBehaviour
         }
     }
 
-    public void SpawnNewEnemy()
+    public void SpawnNewEnemy(bool isSecondSpawn)
     {
         //Get all unenabled spawns from enemy parent, pick one at random to enable
         List<GameObject> validSpawns = new List<GameObject>();
@@ -402,22 +446,31 @@ public class UIScope2D : MonoBehaviour
             eScript.animator.SetBool("isDying", false);
             eScript.animator.SetBool("isRising", true);
             eScript.hitpoints = eScript.hitpointDefault;
-            eScript.setTimeToNextShot();
-            if (difficultyLevel >= 15)
+            if (difficultyLevel >= 30)
             {
-                eScript.shotDelay = 3;
+                eScript.shotDelay = 2.5f;
+                eScript.shotWarn = 0.5f;
+            }
+            else if (difficultyLevel >= 25)
+            {
+                eScript.shotDelay = 3f;
                 eScript.shotWarn = 0.5f;
             }
             else if (difficultyLevel >= 10)
             {
-                eScript.shotDelay = 3;
+                eScript.shotDelay = 3.5f;
                 eScript.shotWarn = 1f;
             }
             else if (difficultyLevel >= 2)
             {
-                eScript.shotDelay = 4;
+                eScript.shotDelay = 4f;
                 eScript.shotWarn = 1.5f;
             }
+            if (isSecondSpawn)
+            {
+                eScript.shotDelay = eScript.shotDelay + 1f;
+            }
+            eScript.setTimeToNextShot();
         }
         else
         {

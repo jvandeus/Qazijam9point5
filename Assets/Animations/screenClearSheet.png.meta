@@ -1,18 +1,13 @@
 fileFormatVersion: 2
-guid: 0f6311dc1eaa448448e9bb5be03308ee
-timeCreated: 1492979484
+guid: 895c059b632d3c24bbebdda5917cf747
+timeCreated: 1492974570
 licenseType: Free
 TextureImporter:
   fileIDToRecycleName:
-    21300000: pillarEnemy_5
-    21300002: pillarEnemy_2
-    21300004: pillarEnemy_6
-    21300006: pillarEnemy_1
-    21300008: pillarEnemy_4
-    21300010: pillarEnemy_3
-    21300012: pillarEnemy_7
-    21300014: pillarEnemy_0
-    21300016: pillarEnemy00
+    21300000: screenClearSheet_0
+    21300002: screenClearSheet_1
+    21300004: screenClearSheet_2
+    21300006: screenClearSheet_3
   serializedVersion: 4
   mipmaps:
     mipMapMode: 0
@@ -87,119 +82,54 @@ TextureImporter:
     serializedVersion: 2
     sprites:
     - serializedVersion: 2
-      name: pillarEnemy_0
+      name: screenClearSheet_0
       rect:
         serializedVersion: 2
-        x: 408
-        y: 1651
-        width: 389
-        height: 389
+        x: 2
+        y: 62
+        width: 46
+        height: 46
       alignment: 0
-      pivot: {x: 0.5, y: 0.5}
+      pivot: {x: 0, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
       outline: []
       tessellationDetail: 0
     - serializedVersion: 2
-      name: pillarEnemy_1
+      name: screenClearSheet_1
       rect:
         serializedVersion: 2
-        x: 5
-        y: 1249
-        width: 390
-        height: 388
+        x: 62
+        y: 62
+        width: 46
+        height: 46
       alignment: 0
-      pivot: {x: 0.5, y: 0.5}
+      pivot: {x: 0, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
       outline: []
       tessellationDetail: 0
     - serializedVersion: 2
-      name: pillarEnemy_2
+      name: screenClearSheet_2
       rect:
         serializedVersion: 2
-        x: 407
-        y: 1249
-        width: 389
-        height: 389
+        x: 2
+        y: 2
+        width: 46
+        height: 46
       alignment: 0
-      pivot: {x: 0.5, y: 0.5}
+      pivot: {x: 0, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
       outline: []
       tessellationDetail: 0
     - serializedVersion: 2
-      name: pillarEnemy_3
+      name: screenClearSheet_3
       rect:
         serializedVersion: 2
-        x: 6
-        y: 848
-        width: 389
-        height: 388
+        x: 62
+        y: 2
+        width: 46
+        height: 46
       alignment: 0
-      pivot: {x: 0.5, y: 0.5}
-      border: {x: 0, y: 0, z: 0, w: 0}
-      outline: []
-      tessellationDetail: 0
-    - serializedVersion: 2
-      name: pillarEnemy_4
-      rect:
-        serializedVersion: 2
-        x: 407
-        y: 847
-        width: 389
-        height: 389
-      alignment: 0
-      pivot: {x: 0.5, y: 0.5}
-      border: {x: 0, y: 0, z: 0, w: 0}
-      outline: []
-      tessellationDetail: 0
-    - serializedVersion: 2
-      name: pillarEnemy_5
-      rect:
-        serializedVersion: 2
-        x: 5
-        y: 446
-        width: 389
-        height: 386
-      alignment: 0
-      pivot: {x: 0.5, y: 0.5}
-      border: {x: 0, y: 0, z: 0, w: 0}
-      outline: []
-      tessellationDetail: 0
-    - serializedVersion: 2
-      name: pillarEnemy_6
-      rect:
-        serializedVersion: 2
-        x: 5
-        y: 43
-        width: 389
-        height: 387
-      alignment: 0
-      pivot: {x: 0.5, y: 0.5}
-      border: {x: 0, y: 0, z: 0, w: 0}
-      outline: []
-      tessellationDetail: 0
-    - serializedVersion: 2
-      name: pillarEnemy_7
-      rect:
-        serializedVersion: 2
-        x: 4
-        y: 1651
-        width: 390
-        height: 389
-      alignment: 0
-      pivot: {x: 0.5, y: 0.5}
-      border: {x: 0, y: 0, z: 0, w: 0}
-      outline: []
-      tessellationDetail: 0
-    - serializedVersion: 2
-      name: pillarEnemy00
-      rect:
-        serializedVersion: 2
-        x: 457
-        y: 351
-        width: 390
-        height: 390
-      alignment: 0
-      pivot: {x: 0.5, y: 0.5}
+      pivot: {x: 0, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
       outline: []
       tessellationDetail: 0
