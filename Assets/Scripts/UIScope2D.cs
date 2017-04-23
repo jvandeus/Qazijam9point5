@@ -72,6 +72,15 @@ public class UIScope2D : MonoBehaviour
     float levelDelay;
     int difficultyLevel;
 
+    //Powerups
+    public int enemySpawnsToPowerUp;
+    int spawnCounter;
+    public GameObject powerupContainer;
+    List<GameObject> powerupChildren = new List<GameObject>();
+    public float chargeDuration;
+    bool isCharged = false;
+    float chargeExpire = 0.0f;
+
     void Start()
     {
         gamePaused = false;
@@ -83,6 +92,7 @@ public class UIScope2D : MonoBehaviour
         multi = 0;
         topCombo = 0;
         thisCombo = 0;
+        spawnCounter = 0;
         multiTextDisplay.text = "";
 
         foreach (Transform thisChild in BulletUI.transform)
@@ -93,6 +103,11 @@ public class UIScope2D : MonoBehaviour
         foreach (Transform thisChild in HealthUI.transform)
         {
             HealthUIChildren.Add(thisChild.gameObject);
+        }
+
+        foreach (Transform thisChild in powerupContainer.transform)
+        {
+            powerupChildren.Add(thisChild.gameObject);
         }
 
         hitSource = gameObject.AddComponent<AudioSource>() as AudioSource;
@@ -132,6 +147,7 @@ public class UIScope2D : MonoBehaviour
             {
                 nextSpawn = Time.time + enemySpawnDelay;
                 SpawnNewEnemy();
+                spawnCounter++;
                 if (difficultyLevel >= 15)
                 {
                     SpawnNewEnemy();
@@ -149,6 +165,35 @@ public class UIScope2D : MonoBehaviour
                     {
                         SpawnNewEnemy();
                     }
+                }
+            }
+
+            if (isCharged && Time.time > chargeExpire)
+            {
+                isCharged = false;
+                reloadDelay = reloadDelay * 2;
+                fireDelay = fireDelay * 2;
+                foreach (GameObject thisBullet in BulletUIChildren)
+                {
+                    Renderer bRend = thisBullet.GetComponent<Renderer>();
+                    bRend.material.color = Color.white;
+                }
+            }
+
+            if (spawnCounter >= enemySpawnsToPowerUp)
+            {
+                spawnCounter = 0;
+                if (hitsTaken >= 2)
+                {
+                    spawnPowerUp("HealthPack");
+                }
+                else if (hitsTaken > 0 && Random.Range(0, 100) > 49)
+                {
+                    spawnPowerUp("HealthPack");
+                }
+                else
+                {
+                    spawnPowerUp("Supercharger");
                 }
             }
 
@@ -242,15 +287,53 @@ public class UIScope2D : MonoBehaviour
             }
             else if (Physics.Raycast(scopeCamera.transform.position, Vector3.forward, out eHit, 25f, enemyMask, QueryTriggerInteraction.Ignore))
             {
-                EnemyHandler eScript = eHit.transform.GetComponent<EnemyHandler>();
-                eScript.normalHit();
-                multi = 0;
-                score = score + normalHitValue;
-                Cursor.SetCursor(hitCursorTexture, hotSpot, cursorMode);
-                removeHitMarker = Time.time + hitMarkerDelay;
-                checkCursor = true;
-                hitSource.PlayOneShot(hitSound, 2f);
-                thisCombo = 0;
+                if (eHit.transform.GetComponent<EnemyHandler>() == null)
+                {
+                    if (eHit.transform.tag == "HealthPack")
+                    {
+                        foreach (GameObject thisPack in HealthUIChildren)
+                        {
+                            Renderer healthRend = thisPack.GetComponent<Renderer>();
+                            healthRend.enabled = true;
+                        }
+                        hitsTaken = 0;
+                        AudioSource packAudio = eHit.transform.GetComponent<AudioSource>();
+                        packAudio.PlayOneShot(packAudio.clip);
+                        Renderer packRend = eHit.transform.GetComponent<Renderer>();
+                        packRend.enabled = false;
+                        eHit.transform.gameObject.layer = 10;
+                    }
+                    else if (eHit.transform.tag == "Supercharger")
+                    {
+                        AudioSource packAudio = eHit.transform.GetComponent<AudioSource>();
+                        packAudio.PlayOneShot(packAudio.clip);
+                        Renderer packRend = eHit.transform.GetComponent<Renderer>();
+                        packRend.enabled = false;
+                        eHit.transform.gameObject.layer = 10;
+                        chargeExpire = Time.time + chargeDuration;
+                        isCharged = true;
+                        reloadDelay = reloadDelay / 2;
+                        fireDelay = fireDelay / 2;
+                        nextReload = 0.0f;
+                        foreach (GameObject thisBullet in BulletUIChildren)
+                        {
+                            Renderer bRend = thisBullet.GetComponent<Renderer>();
+                            bRend.material.color = Color.red;
+                        }
+                    }
+                }
+                else
+                {
+                    EnemyHandler eScript = eHit.transform.GetComponent<EnemyHandler>();
+                    eScript.normalHit();
+                    multi = 0;
+                    score = score + normalHitValue;
+                    Cursor.SetCursor(hitCursorTexture, hotSpot, cursorMode);
+                    removeHitMarker = Time.time + hitMarkerDelay;
+                    checkCursor = true;
+                    hitSource.PlayOneShot(hitSound, 2f);
+                    thisCombo = 0;
+                }
             }
             else
             {
@@ -301,11 +384,9 @@ public class UIScope2D : MonoBehaviour
     {
         //Get all unenabled spawns from enemy parent, pick one at random to enable
         List<GameObject> validSpawns = new List<GameObject>();
-        Renderer eRenderer;
         EnemyHandler eScript;
         foreach (Transform thisEnemy in enemySpawnParent.transform)
         {
-            eRenderer = thisEnemy.gameObject.GetComponent<Renderer>();
             eScript = thisEnemy.gameObject.GetComponent<EnemyHandler>();
             if (eScript.isDead && Time.time > eScript.nextSpawn)
             {
@@ -345,6 +426,31 @@ public class UIScope2D : MonoBehaviour
 
     }
 
+    public void spawnPowerUp(string powerUpTag)
+    {
+        List<GameObject> validPowerUps = new List<GameObject>();
+        Renderer pRenderer;
+        foreach (GameObject thisPowerUp in powerupChildren)
+        {
+            if (thisPowerUp.transform.tag == powerUpTag)
+            {
+                pRenderer = thisPowerUp.GetComponent<Renderer>();
+                if (pRenderer.enabled == false)
+                {
+                    validPowerUps.Add(thisPowerUp);
+                }
+            }
+        }
+
+        if (validPowerUps.Count > 0)
+        {
+            GameObject randomPower = validPowerUps[Random.Range(0, validPowerUps.Count)];
+            pRenderer = randomPower.GetComponent<Renderer>();
+            pRenderer.enabled = true;
+            randomPower.layer = 8;
+        }
+    }
+
     public void TakeDamage()
     {
         timeLerpStarted = Time.time;
@@ -375,6 +481,7 @@ public class UIScope2D : MonoBehaviour
             eScript = thisEnemy.gameObject.GetComponent<EnemyHandler>();
             eScript.togglePause();
         }
+        Cursor.SetCursor(cursorTexture, hotSpot, cursorMode);
         gameOverCanvas.SetActive(true);
     }
 }
