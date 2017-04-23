@@ -8,6 +8,14 @@ public class UIScope2D : MonoBehaviour
     public GameObject scopeOutline;
     public Camera scopeCamera;
     public Texture2D cursorTexture;
+    public Texture2D hitCursorTexture;
+    public Texture2D critCursorTexture;
+    float hitMarkerDelay = 0.25f;
+    float removeHitMarker = 0.0f;
+    bool checkCursor = false;
+    public AudioClip hitSound;
+    public AudioClip critSound;
+    private AudioSource hitSource;
     public Color cursorColor;
     public CursorMode cursorMode = CursorMode.Auto;
     public Vector2 hotSpot = Vector2.zero;
@@ -23,6 +31,8 @@ public class UIScope2D : MonoBehaviour
     bool wasLastClipWarn = false;
     public GameObject BulletUI;
     List<GameObject> BulletUIChildren = new List<GameObject>();
+    public GameObject HealthUI;
+    List<GameObject> HealthUIChildren = new List<GameObject>();
     //Reloading
     bool isReloading = false;
     public float reloadDelay = 0.25f;
@@ -55,6 +65,12 @@ public class UIScope2D : MonoBehaviour
     Renderer BGRender;
     bool displayDamage = false;
     float timeLerpStarted = 0.0f;
+    public AudioClip[] eShotSounds;
+
+    //Difficulty Ramping
+    float nextLevel;
+    float levelDelay;
+    int difficultyLevel;
 
     void Start()
     {
@@ -74,7 +90,18 @@ public class UIScope2D : MonoBehaviour
             BulletUIChildren.Add(thisChild.gameObject);
         }
 
+        foreach (Transform thisChild in HealthUI.transform)
+        {
+            HealthUIChildren.Add(thisChild.gameObject);
+        }
+
+        hitSource = gameObject.AddComponent<AudioSource>() as AudioSource;
+        hitSource.playOnAwake = false;
+
         gameOverCanvas.SetActive(false);
+        levelDelay = 5f;
+        nextLevel = Time.time + levelDelay;
+        difficultyLevel = 1;
     }
 
     void Update()
@@ -105,6 +132,31 @@ public class UIScope2D : MonoBehaviour
             {
                 nextSpawn = Time.time + enemySpawnDelay;
                 SpawnNewEnemy();
+                if (difficultyLevel >= 15)
+                {
+                    SpawnNewEnemy();
+                }
+                else if (difficultyLevel >= 10)
+                {
+                    if (Random.Range(0, 100) > 74)
+                    {
+                        SpawnNewEnemy();
+                    }
+                }
+                else if (difficultyLevel >= 5)
+                {
+                    if (Random.Range(0, 100) > 49)
+                    {
+                        SpawnNewEnemy();
+                    }
+                }
+            }
+
+            if (Time.time > nextLevel)
+            {
+                difficultyLevel++;
+                nextLevel = Time.time + levelDelay;
+                Debug.Log("Difficulty : " + difficultyLevel);
             }
 
             if (displayDamage)
@@ -120,6 +172,12 @@ public class UIScope2D : MonoBehaviour
                 {
                     BGRender.material.color = Color.Lerp(Color.red, Color.white, percentageComplete); ;
                 }
+            }
+
+            if (checkCursor && Time.time > removeHitMarker)
+            {
+                checkCursor = false;
+                Cursor.SetCursor(cursorTexture, hotSpot, cursorMode);
             }
 
             //Shooting
@@ -154,7 +212,7 @@ public class UIScope2D : MonoBehaviour
             nextReload = 0.0f;
             nextFire = Time.time + fireDelay;
             AudioClip thisSound = shotSounds[Random.Range(0, shotSounds.Length)];
-            objectAudio.PlayOneShot(thisSound, 0.5f);
+            objectAudio.PlayOneShot(thisSound, 0.25f);
             wasLastClipWarn = false;
             Renderer rend = BulletUIChildren[shotPointer].GetComponent<Renderer>();
             rend.enabled = false;
@@ -177,6 +235,10 @@ public class UIScope2D : MonoBehaviour
                     topCombo = thisCombo;
                 }
                 score = score + (critHitValue * multi);
+                Cursor.SetCursor(critCursorTexture, hotSpot, cursorMode);
+                removeHitMarker = Time.time + hitMarkerDelay;
+                checkCursor = true;
+                hitSource.PlayOneShot(critSound, 1f);
             }
             else if (Physics.Raycast(scopeCamera.transform.position, Vector3.forward, out eHit, 25f, enemyMask, QueryTriggerInteraction.Ignore))
             {
@@ -184,10 +246,16 @@ public class UIScope2D : MonoBehaviour
                 eScript.normalHit();
                 multi = 0;
                 score = score + normalHitValue;
+                Cursor.SetCursor(hitCursorTexture, hotSpot, cursorMode);
+                removeHitMarker = Time.time + hitMarkerDelay;
+                checkCursor = true;
+                hitSource.PlayOneShot(hitSound, 2f);
+                thisCombo = 0;
             }
             else
             {
                 multi = 0;
+                thisCombo = 0;
             }
         }
         else if (shotPointer == 6 && Time.time > nextFire)
@@ -254,7 +322,21 @@ public class UIScope2D : MonoBehaviour
             eScript.animator.SetBool("isRising", true);
             eScript.hitpoints = eScript.hitpointDefault;
             eScript.setTimeToNextShot();
-            Debug.Log(Time.time);
+            if (difficultyLevel >= 15)
+            {
+                eScript.shotDelay = 3;
+                eScript.shotWarn = 0.5f;
+            }
+            else if (difficultyLevel >= 10)
+            {
+                eScript.shotDelay = 3;
+                eScript.shotWarn = 1f;
+            }
+            else if (difficultyLevel >= 2)
+            {
+                eScript.shotDelay = 4;
+                eScript.shotWarn = 1.5f;
+            }
         }
         else
         {
@@ -267,7 +349,11 @@ public class UIScope2D : MonoBehaviour
     {
         timeLerpStarted = Time.time;
         displayDamage = true;
+        Renderer rend = HealthUIChildren[hitsTaken].GetComponent<Renderer>();
+        rend.enabled = false;
         hitsTaken++;
+        AudioClip thisSound = eShotSounds[Random.Range(0, eShotSounds.Length)];
+        objectAudio.PlayOneShot(thisSound, 0.75f);
         if (hitsTaken >= 3)
         {
             GameOver();
