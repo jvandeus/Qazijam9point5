@@ -82,6 +82,13 @@ public class UIScope2D : MonoBehaviour
     bool isCharged = false;
     float chargeExpire = 0.0f;
 
+    //Music
+    AudioSource BGAudio;
+    public AudioClip[] GameOverTracks;
+    float audioVolume = 0.0f;
+    bool fadingOutMainTrack;
+    bool playingGameOver;
+
     void Start()
     {
         gamePaused = false;
@@ -89,12 +96,16 @@ public class UIScope2D : MonoBehaviour
         shotPointer = 0;
         objectAudio = GetComponent<AudioSource>();
         BGRender = stageBG.GetComponent<Renderer>();
+        BGAudio = stageBG.GetComponent<AudioSource>();
+        audioVolume = BGAudio.volume;
         score = 0;
         multi = 0;
         topCombo = 0;
         thisCombo = 0;
         spawnCounter = 0;
         multiTextDisplay.text = "";
+        fadingOutMainTrack = false;
+        playingGameOver = false;
 
         foreach (Transform thisChild in BulletUI.transform)
         {
@@ -148,7 +159,7 @@ public class UIScope2D : MonoBehaviour
 
             if (Time.time > nextSpawn)
             {
-                
+
                 SpawnNewEnemy(false);
                 spawnCounter++;
                 if (difficultyLevel >= 20)
@@ -157,9 +168,8 @@ public class UIScope2D : MonoBehaviour
                 }
                 else if (difficultyLevel >= 15)
                 {
-                    enemySpawnDelay = 2f;
                     if (Random.Range(0, 100) > 24)
-                    {                
+                    {
                         SpawnNewEnemy(true);
                     }
                 }
@@ -174,7 +184,7 @@ public class UIScope2D : MonoBehaviour
                 {
                     enemySpawnDelay = 3f;
                     if (Random.Range(0, 100) > 74)
-                    {                     
+                    {
                         SpawnNewEnemy(true);
                     }
                 }
@@ -227,7 +237,6 @@ public class UIScope2D : MonoBehaviour
             {
                 difficultyLevel++;
                 nextLevel = Time.time + levelDelay;
-                Debug.Log("Difficulty : " + difficultyLevel);
             }
 
             if (displayDamage)
@@ -263,6 +272,29 @@ public class UIScope2D : MonoBehaviour
                 HandleReload();
             }
         }
+        else
+        {
+            if (playingGameOver)
+            {             
+                BGAudio.volume = 0.35f;
+                AudioClip thisTrack = GameOverTracks[Random.Range(0, GameOverTracks.Length)];
+                BGAudio.loop = false;
+                BGAudio.clip = thisTrack;
+                BGAudio.Play();
+                playingGameOver = false;
+            }
+            else if (fadingOutMainTrack)
+            {
+                audioVolume -= 0.1f * Time.deltaTime;
+                BGAudio.volume = audioVolume;
+                if (audioVolume <= 0.01)
+                {
+                    playingGameOver = true;
+                    fadingOutMainTrack = false;
+                    BGAudio.Stop();
+                }
+            }
+        }
     }
 
     /**
@@ -283,7 +315,7 @@ public class UIScope2D : MonoBehaviour
             nextReload = 0.0f;
             nextFire = Time.time + fireDelay;
             AudioClip thisSound = shotSounds[Random.Range(0, shotSounds.Length)];
-            objectAudio.PlayOneShot(thisSound, 0.25f);
+            objectAudio.PlayOneShot(thisSound, 0.35f);
             wasLastClipWarn = false;
             Renderer rend = BulletUIChildren[shotPointer].GetComponent<Renderer>();
             rend.enabled = false;
@@ -310,6 +342,7 @@ public class UIScope2D : MonoBehaviour
                 removeHitMarker = Time.time + hitMarkerDelay;
                 checkCursor = true;
                 hitSource.PlayOneShot(critSound, 1f);
+                spawnCounter++;
             }
             else if (Physics.Raycast(scopeCamera.transform.position, Vector3.forward, out eHit, 25f, enemyMask, QueryTriggerInteraction.Ignore))
             {
@@ -485,13 +518,17 @@ public class UIScope2D : MonoBehaviour
         Renderer pRenderer;
         foreach (GameObject thisPowerUp in powerupChildren)
         {
+            pRenderer = thisPowerUp.GetComponent<Renderer>();
             if (thisPowerUp.transform.tag == powerUpTag)
-            {
-                pRenderer = thisPowerUp.GetComponent<Renderer>();
+            {           
                 if (pRenderer.enabled == false)
                 {
                     validPowerUps.Add(thisPowerUp);
                 }
+            }
+            if (pRenderer.enabled)
+            {
+                pRenderer.enabled = false;
             }
         }
 
@@ -536,5 +573,6 @@ public class UIScope2D : MonoBehaviour
         }
         Cursor.SetCursor(cursorTexture, hotSpot, cursorMode);
         gameOverCanvas.SetActive(true);
+        fadingOutMainTrack = true;
     }
 }

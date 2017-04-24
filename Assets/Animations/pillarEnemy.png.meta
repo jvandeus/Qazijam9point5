@@ -1,6 +1,6 @@
 fileFormatVersion: 2
 guid: 0f6311dc1eaa448448e9bb5be03308ee
-timeCreated: 1492979484
+timeCreated: 1492989223
 licenseType: Free
 TextureImporter:
   fileIDToRecycleName:
@@ -181,10 +181,10 @@ TextureImporter:
       name: pillarEnemy_7
       rect:
         serializedVersion: 2
-        x: 4
-        y: 1651
-        width: 390
-        height: 389
+        x: 8
+        y: 1653
+        width: 386
+        height: 387
       alignment: 0
       pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -194,8 +194,8 @@ TextureImporter:
       name: pillarEnemy00
       rect:
         serializedVersion: 2
-        x: 457
-        y: 351
+        x: 594
+        y: 49
         width: 390
         height: 390
       alignment: 0
