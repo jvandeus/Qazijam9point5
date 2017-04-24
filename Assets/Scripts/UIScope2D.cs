@@ -194,8 +194,8 @@ public class UIScope2D : MonoBehaviour
             if (isCharged && Time.time > chargeExpire)
             {
                 isCharged = false;
-                reloadDelay = reloadDelay * 2;
-                fireDelay = fireDelay * 2;
+                reloadDelay = 0.25f;
+                fireDelay = 0.5f;
                 foreach (GameObject thisBullet in BulletUIChildren)
                 {
                     Renderer bRend = thisBullet.GetComponent<Renderer>();
@@ -371,8 +371,8 @@ public class UIScope2D : MonoBehaviour
                         eHit.transform.gameObject.layer = 10;
                         chargeExpire = Time.time + chargeDuration;
                         isCharged = true;
-                        reloadDelay = reloadDelay / 2;
-                        fireDelay = fireDelay / 2;
+                        reloadDelay = 0.12f;
+                        fireDelay = 0.25f;
                         nextReload = 0.0f;
                         foreach (GameObject thisBullet in BulletUIChildren)
                         {
